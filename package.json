@@ -1,17 +1,23 @@
 {
-  "name": "skrald-kalender",
-  "version": "1.0.0",
+  "name": "renoweb-kalender",
+  "version": "0.1.0",
   "main": "src/index.js",
   "author": "Jesper Birkestrøm <jesper@birkestroem.dk>",
   "license": "MIT",
   "dependencies": {
+    "express": "4.16.4",
     "ics": "2.10.0",
     "luxon": "1.10.0",
     "node-fetch": "2.3.0"
   },
   "devDependencies": {
-    "eslint": "5.13.0",
     "eslint-config-airbnb-base": "13.1.0",
-    "eslint-plugin-import": "2.16.0"
+    "eslint-plugin-import": "2.16.0",
+    "eslint": "5.13.0",
+    "nodemon": "1.18.9"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "start:dev": "nodemon src/index.js"
   }
 }
