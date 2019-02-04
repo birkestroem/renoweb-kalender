@@ -3,6 +3,7 @@ const { DateTime } = require('luxon');
 const ics = require('ics');
 const { promisify } = require('util');
 const express = require('express');
+const morgan = require('morgan');
 
 ics.createEventsAsync = promisify(ics.createEvents);
 
@@ -48,6 +49,8 @@ const getDatesForService = async (materialId) => {
 };
 
 const app = express();
+app.use(morgan('combined'));
+app.enable('trust proxy');
 app.get('/:address.ics', async (req, res, next) => {
   const { address } = req.params;
 
