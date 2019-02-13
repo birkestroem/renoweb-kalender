@@ -49,8 +49,16 @@ const getDatesForService = async (materialId) => {
 };
 
 const app = express();
-app.use(morgan('combined'));
-app.enable('trust proxy');
+app
+.enable('trust proxy')
+  .use(morgan('combined'))
+  .set('view engine', 'pug')
+  .set('views', 'src/views');
+
+app.get('/', async (req, res) => {
+  res.render('index', {});
+});
+
 app.get('/:address.ics', async (req, res, next) => {
   const { address } = req.params;
 
@@ -59,7 +67,7 @@ app.get('/:address.ics', async (req, res, next) => {
     if (addressesFound.length === 0) {
       throw new Error('No address found');
     } else if (addressesFound.length > 1) {
-      throw new Error('Too manY addresses found');
+      throw new Error('Too many addresses found');
     }
 
     const { value: addressId } = addressesFound[0];

@@ -1,0 +1,13 @@
+doctype html
+html
+  include includes/head.pug
+  body.text-center
+    form.form-center
+      h1.h3.mb-3.font-weight-normal
+        | Indtast din adresse
+      label.sr-only(for="inputAddress") Adresse
+      input.form-control(type="address" list="json-datalist" placeholder="Paradisæblevej 111, 1234 Andeby " required="" autocomplete="off" autofocus="")
+      br
+      button.btn.btn-lg.btn-primary.btn-block(type="submit") Hent kalender
+    datalist#json-datalist
+    include includes/foot.pug
