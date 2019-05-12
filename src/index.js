@@ -20,19 +20,22 @@ const headers = {
 const getAddressId = async (addressString) => {
   const res = await fetch('https://naestved.renoweb.dk/Legacy/JService.asmx/Adresse_SearchByString', {
     headers,
-    body: JSON.stringify({ searchterm: addressString, addresswithmateriel: true }),
+    body: JSON.stringify({ searchterm: addressString, addresswithmateriel: 0 }),
     method: 'POST',
   });
-  return JSON.parse((await res.json()).d);
+
+  const data = (await res.json()).d;
+  return JSON.parse(data);
 };
 
-const getServiceSchedule = async (addressId) => {
+const getServiceSchedule = async (propertyId) => {
   const res = await fetch('https://naestved.renoweb.dk/Legacy/JService.asmx/GetAffaldsplanMateriel_mitAffald', {
     headers,
-    body: JSON.stringify({ adrid: addressId, common: false }),
+    body: JSON.stringify({ adrid: propertyId, common: false }),
     method: 'POST',
   });
-  return JSON.parse((await res.json()).d);
+  const data = await res.json();
+  return JSON.parse(data.d);
 };
 
 const getDatesForService = async (materialId) => {
@@ -50,29 +53,28 @@ const getDatesForService = async (materialId) => {
 
 const app = express();
 app
-.enable('trust proxy')
+  .enable('trust proxy')
   .use(morgan('combined'))
   .set('view engine', 'pug')
-  .set('views', 'src/views');
+  .set('views', 'src/views')
+  .use(express.json());
 
 app.get('/', async (req, res) => {
   res.render('index', {});
 });
 
-app.get('/:address.ics', async (req, res, next) => {
-  const { address } = req.params;
+app.post('/property/searchByAddress.json', async (req, res) => {
+  const { address } = req.body;
+  const list = await getAddressId(address);
+  res.send(list);
+});
+
+
+app.get('/property/schedule/:propertyId.ics', async (req, res, next) => {
+  const { propertyId } = req.params;
 
   try {
-    const { list: addressesFound } = await getAddressId(address);
-    if (addressesFound.length === 0) {
-      throw new Error('No address found');
-    } else if (addressesFound.length > 1) {
-      throw new Error('Too many addresses found');
-    }
-
-    const { value: addressId } = addressesFound[0];
-    const { list: servicesFound } = await getServiceSchedule(addressId);
-
+    const { list: servicesFound } = await getServiceSchedule(propertyId);
     const events = [];
     for (const service of servicesFound) {
       const { ordningnavn, materielnavn, id: serviceId } = service;
@@ -87,7 +89,6 @@ app.get('/:address.ics', async (req, res, next) => {
           end: [end.year, end.month, end.day],
           title: serviceTitle,
           description: serviceDescription,
-          location: toProperCase(address),
         });
       }
     }

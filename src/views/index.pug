@@ -6,8 +6,156 @@ html
       h1.h3.mb-3.font-weight-normal
         | Indtast din adresse
       label.sr-only(for="inputAddress") Adresse
-      input.form-control(type="address" list="json-datalist" placeholder="Paradisæblevej 111, 1234 Andeby " required="" autocomplete="off" autofocus="")
+
+      input.form-control#addressInput(type="address" list="addresses" placeholder="Paradisæblevej 111, 1234 Andeby" required="" autocomplete="off" autofocus="")
+
       br
-      button.btn.btn-lg.btn-primary.btn-block(type="submit") Hent kalender
-    datalist#json-datalist
+
+      button.btn.btn-lg.btn-primary.btn-block(type="submit", disabled="true")
+        | Hent kalender link
+
+      //- div.loading-status(style={'margin': '10px 0'})
+      //-   div.spinner-border.spinner-border-sm(role="status")
+      //-   |
+      //-   | Henter resultater...
+
+      p
+        small.text-muted Donec ullamcorper nulla non metus auctor fringilla. Curabitur blandit tempus porttitor. Cras mattis consectetur purus sit amet fermentum. Nullam quis risus eget urna mollis ornare vel eu leo.
+
     include includes/foot.pug
+
+    script.
+      //- const datalist = document.getElementById('addresses');
+      const input = document.getElementById('addressInput');
+      const form = document.getElementsByTagName('form')[0];
+      let controller;
+      let signal;
+
+      $(input).autocomplete({
+        create: function() {
+          $(this).data('ui-autocomplete')._renderItem = ( ul, item ) => {
+            console.log(item);
+            return $( "<li>" )
+              .attr( "data-value", item.value )
+              .append( item.label )
+              .appendTo( ul );
+          }
+        },
+        source: (request, response) => {
+          fetch('property/searchByAddress.json', {
+              signal,
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ address: request.term })
+            })
+            .then((response) => {
+              return response.json();
+            })
+            .then((json) => {
+              const { status, list } = json;
+              if (!status.status.match(/ok/i)) {
+                throw new Error(status.msg);
+              }
+              console.log(list);
+              response(list);
+            });
+        }
+      });
+
+
+      input.addEventListener('keyup', (event) => {
+        if (event.which !== 13) {
+          const addressString = input.value;
+
+          if (addressString === '') {
+            //- datalist.innerHTML = '';
+            return;
+          }
+
+          if (controller !== undefined) {
+            controller.abort();
+          }
+
+          controller = new AbortController();
+          signal = controller.signal;
+
+          fetch('property/searchByAddress.json', {
+              signal,
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ address: addressString })
+            })
+            .then((response) => {
+              return response.json();
+            })
+            .then((json) => {
+              const { status, list } = json;
+              if (!status.status.match(/ok/i)) {
+                throw new Error(status.msg);
+              }
+
+              //- if (list !== undefined) {
+              //-   list.forEach((d) => {
+              //-     const option =  new Option(d.label);
+              //-     datalist.appendChild(option);
+              //-   });
+              //- }
+            })
+            .catch((error) => {
+              if (error.name === 'AbortError') {
+                return;
+              }
+
+              const alert = document.createElement('div');
+              alert.classList.add('alert', 'alert-danger', 'alert-dismissible', 'fade', 'show');
+              alert.setAttribute('role', 'alert');
+
+              const headline = document.createElement('strong');
+              headline.innerText = 'Fejl!';
+              alert.appendChild(headline);
+
+              const errorMessage = document.createTextNode(' ' + error.message);
+              alert.appendChild(errorMessage);
+
+              const button = document.createElement('button');
+              button.classList.add('close');
+              button.setAttribute('type', 'button');
+              button.setAttribute('data-dismiss', 'alert');
+              button.setAttribute('aria-label', 'Close');
+
+              const closeLabel = document.createElement('span');
+              closeLabel.setAttribute('aria-hidden', true);
+              closeLabel.innerHTML = '&times;';
+              button.appendChild(closeLabel);
+
+              alert.appendChild(button);
+
+              document.getElementsByTagName('body')[0].appendChild(alert);
+
+              console.error(error);
+            });
+        }
+      });
+
+      //- input.addEventListener('keydown', (event) => {
+      //-   if (event.which === 13) {
+      //-     event.preventDefault();
+      //-     form.dispatchEvent(new Event('submit'));
+      //-   }
+      //- });
+
+      //- form.addEventListener('submit', (event) => {
+      //-   event.preventDefault();
+      //-   const { location } = window;
+      //-   const address = input.value;
+
+      //-   console.log(address);
+
+      //-   // TODO: resolve then redirect or error
+
+      //-   // location.pathname = `${location.pathname}${encodeURIComponent()}.ics`;
+      //- });
